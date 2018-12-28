@@ -50,11 +50,16 @@ def get_current_player():
 
 @app.route('/toggle', methods=['POST'])
 def toggle_cell():
-    cell = request.form.get('cell')
+    if request.json is None:
+        raise BadRequest("Not a JSON payload")
+    try:
+        cell = request.json['cell']
+    except KeyError:
+        raise BadRequest("Missing key cell")
     try:
         cell = int(cell)
     except (ValueError, TypeError):
-        raise BadRequest()
+        raise BadRequest("Not an cell index")
     player = get_current_player()
     try:
         cell_state = current_app.cell_state[player][cell]
