@@ -41,6 +41,7 @@ function initialize_prepare_handlers() {
         type: 'POST',
         url: '/toggle',
         dataType: 'json',
+        contentType: 'application/json',
         data: JSON.stringify({'cell': i})
       });
     }
