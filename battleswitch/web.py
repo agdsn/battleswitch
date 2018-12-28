@@ -2,7 +2,7 @@ from flask import current_app, redirect, request, session, url_for, jsonify
 from werkzeug.exceptions import BadRequest, Unauthorized
 
 from battleswitch import app, GameState, CellState, StateLock
-from battleswitch.snmp import run_probe_loop
+from battleswitch.snmp import run_probe_loop, set_admin_status
 
 logger = app.logger
 
@@ -101,6 +101,7 @@ def ready():
         current_app.ready_state[player] = True
         if all(current_app.ready_state):
             current_app.game_state = GameState.RUNNING
+            set_admin_status(player)
             app.probe_loop = run_probe_loop()
     return ''
 
