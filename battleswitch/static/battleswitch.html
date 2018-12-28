@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8"/>
+    <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+    <script type="text/javascript" src="/static/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/static/battleswitch.js"></script>
+  </head>
+  <body>
+    <h1>Battle Switch</h1>
+
+    <p id="player"/>
+
+    <div id="error">
+      <p>Server is not responding!</p>
+    </div>
+
+    <div id="preparing" style="display: none;">
+      <div id="preparing_board"></div>
+      <p>Please set the following ships:</p>
+      <ul id="prepare_ship_sizes"></ul>
+      <button id="prepare_button">Start Game</button>
+    </div>
+
+    <div id="running" style="display: none;">
+      <div id="own_board" class="game"></div>
+      <div id="enemy_board" class="game"></div>
+    </div>
+
+    <div id="over" style="display: none;">
+      <p>Game is over. <span id="over_text"/></p>
+    </div>
+
+    <button id="reset_button">Restart Game</button>
+  </body>
+</html>
+
+<!-- vim: set ts=2 sts=2 sw=2 et: -->
