@@ -37,11 +37,12 @@ function initialize_board() {
 function initialize_prepare_handlers() {
   var create_handler = function (i) {
     return function () {
-      $.ajax(
+      $.ajax({
         type: 'POST',
         url: '/toggle',
         dataType: 'json',
-        data: JSON.stringify({'cell': i});
+        data: JSON.stringify({'cell': i})
+      });
     }
   };
 
