@@ -97,13 +97,13 @@ function request_state() {
       case 'PREPARING':
         enable_element('preparing');
         set_board('preparing_board', data.state.own);
-        enable_element('prepare_button');
+        $('#prepare_button').css('visibility', '');
         break;
 
       case 'READY':
         enable_element('preparing');
         set_board('preparing_board', data.state.own);
-        disable_element('prepare_button');
+        $('#prepare_button').css('visibility', 'hidden');
         break;
 
       case 'RUNNING':
