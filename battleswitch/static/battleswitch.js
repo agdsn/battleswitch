@@ -35,10 +35,12 @@ function initialize_board() {
 }
 
 function initialize_prepare_handlers() {
+  var create_handler = function (i) {
+    return function () { $.post('/toggle', {'cell': i}); };
+  };
+
   for (var i = 0; i < width*height; i++) {
-    $('#preparing_board' + i).click(function () {
-      $.post('toggle', {'port': i});
-    });
+    $('#preparing_board' + i).click(create_handler(i));
   }
 }
 
@@ -58,22 +60,22 @@ function set_port(board, port_number, state) {
 }
 
 function request_state() {
-  $.getJSON('state', function(data) {
+  $.getJSON('/state', function(data) {
     var preparing_display = 'none';
     var running_display = 'none';
     var over_display = 'none';
-    if (data.state === 'preparing') {
+    if (data.state.state === 'PREPARING') {
       preparing_display = ''; 
       for (var i = 0; i < width*height; i++) {
-        set_port('preparing_board', i, translate(data.own[i]));
+        set_port('preparing_board', i, translate(data.state.own[i]));
       }
-    } else if (data.state === 'running') {
+    } else if (data.state.state === 'RUNNING') {
       running_display = '';
       for (var i = 0; i < width*height; i++) {
-        set_port('own_board', i, translate(data.own[i]));
-        set_port('enemy_board', i, translate(data.enemy[i]));
+        set_port('own_board', i, translate(data.state.own[i]));
+        set_port('enemy_board', i, translate(data.state.enemy[i]));
       }
-    } else if (data.state === 'over') {
+    } else if (data.state.state === 'OVER') {
       over_display = '';
     }
 
@@ -87,12 +89,12 @@ function request_state() {
 
 $(document).ready(function() {
   $('#prepare_button').click(function () {
-    $.post('go');
+    $.post('/go');
   });
 
-  $.getJSON('config', function(data) {
-    width = data.board.width;
-    height = data.board.height;
+  $.getJSON('/config', function(data) {
+    width = data.config.board.width;
+    height = data.config.board.height;
     initialize_board();
     initialize_prepare_handlers();
     request_state();

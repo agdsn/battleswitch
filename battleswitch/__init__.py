@@ -1,7 +1,7 @@
 import enum
 import threading
 
-from flask import Flask, current_app, g, jsonify, request, session
+from flask import Flask, current_app, g, jsonify, request, session, url_for, redirect
 from pysnmp.hlapi import SnmpEngine, CommunityData, ContextData, ObjectIdentity, UdpTransportTarget, getCmd, setCmd
 from werkzeug.exceptions import BadRequest, Unauthorized
 
@@ -22,78 +22,107 @@ class CellState(enum.IntEnum):
 
 
 app = Flask(__package__)
+app.config.from_json('config.json')
+
+
+def board_size():
+    width = current_app.config['BOARD_WIDTH']
+    no_interfaces = len(current_app.config['INTERFACES'])
+    assert no_interfaces % width == 0
+    height = no_interfaces // width
+    return (width, height)
 
 
 @app.route('/')
 def get_root():
-    return ''
+    return redirect(url_for('static', filename='start.html'))
+
+
+@app.route('/game')
+def get_game():
+    return redirect(url_for('static', filename='battleswitch.html'))
 
 
 @app.route('/config')
 def get_config():
+    width, height = board_size()
     return jsonify(config={
         'board': {
-            'width': len(current_app['INTERFACES']) / g.board_width,
-            'height': current_app.conf['BOARD_WIDTH'],
+            'width': width,
+            'height': height,
         },
-        'ships': current_app.conf['SHIPS'],
+        'ships': current_app.config['SHIPS'],
     })
+
+
+@app.route('/player', methods=['POST'])
+def set_player():
+    player = request.form.get('player')
+    if player not in ('0', '1'):
+        raise BadRequest("Invalid player")
+    session['player'] = int(player)
+    return redirect('/game')
 
 
 def get_current_player():
     if 'player' not in session:
         raise Unauthorized()
-    return session['player']
+    player = session['player']
+    if player not in (0, 1):
+        raise BadRequest("Invalid player")
+    return player
 
 
 @app.route('/toggle', methods=['POST'])
 def toggle_cell():
-    data = request.json
-    if not isinstance(data, dict):
-        raise BadRequest("")
-    if 'cell' not in data:
-        raise BadRequest("Missing cell")
+    cell = request.form.get('cell')
     try:
-        cell = int(data['cell'])
+        cell = int(cell)
     except (ValueError, TypeError):
         raise BadRequest()
     player = get_current_player()
     try:
-        cell_state = g.cell_state[player][cell]
+        cell_state = current_app.cell_state[player][cell]
     except KeyError:
-        raise BadRequest("Unknown cell")
+        raise BadRequest("Invalid cell")
     with StateLock:
-        if g.game_state is GameState.PREPARING:
+        if current_app.game_state != GameState.PREPARING:
             raise BadRequest("Not in preparing state")
-        g.cell_state[player] = CellState.EMPTY if cell_state is CellState.PRESENT else CellState.PRESENT
+        current_app.cell_state[player][cell] = CellState.EMPTY if cell_state is CellState.PRESENT else CellState.PRESENT
+    return ''
 
 
 @app.route('/reset')
 def reset():
     setup_state()
+    return ''
 
 
 @app.route('/state')
-def get_state(player):
-    if player not in [0, 1]:
-        raise BadRequest()
+def get_state():
+    player = get_current_player()
     other = [1, 0][player]
     return jsonify(state={
-        'state': g.state,
-        'own': g.game_state[player],
-        'enemy': [CellState.HIT if state is CellState.HIT else CellState.EMPTY for state in g.cell_state[other]],
+        'state': current_app.game_state.name,
+        'own': current_app.cell_state[player],
+        'enemy': [CellState.HIT if state is CellState.HIT else CellState.EMPTY for state in current_app.cell_state[other]],
     })
 
 
-def setup_state():
+@app.route('/go', methods=['POST'])
+def go():
+    # TODO: Do some checks.
     with StateLock:
-        g.board_width = current_app.conf['BOARD_WIDTH']
-        interfaces = current_app['INTERFACES']
-        g.board_height = len(interfaces) / g.board_width
-        g.game_state = GameState.PREPARING
-        g.cell_state = [
-            [CellState.UNKNOWN for _ in interfaces],
-            [CellState.UNKNOWN for _ in interfaces],
+        current_app.game_state = GameState.RUNNING
+
+
+def setup_state():
+    interfaces = current_app.config['INTERFACES']
+    with StateLock:
+        current_app.game_state = GameState.PREPARING
+        current_app.cell_state = [
+            [CellState.EMPTY for _ in interfaces],
+            [CellState.EMPTY for _ in interfaces],
         ]
 
 
@@ -115,4 +144,4 @@ def do_snmp_walk(player, address):
     )
     with StateLock:
         for cell_state, if_state in zip(g.game_state[player], oper_states):
-
+            pass
