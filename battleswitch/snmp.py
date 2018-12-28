@@ -55,7 +55,7 @@ def probe_oper_status(player):
             current_app.cell_state[player][index] = CellState.HIT
 
 
-def set_admin_status(player):
+def set_admin_status(player: int):
     switch = current_app.config['SWITCHES'][player]
     engine = SnmpEngine()
     auth_data = CommunityData(switch['community'], mpModel=1)
