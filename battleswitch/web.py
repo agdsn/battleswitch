@@ -99,10 +99,10 @@ def ready():
             raise BadRequest("Not in PREPARING state")
         # TODO: Do some checks.
         current_app.ready_state[player] = True
+        set_admin_status(player)
         if all(current_app.ready_state):
             current_app.game_state = GameState.RUNNING
-            set_admin_status(player)
-            app.probe_loop = run_probe_loop()
+            app.probe_loop = run_probe_loop(app)
     return ''
 
 

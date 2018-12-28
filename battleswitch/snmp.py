@@ -2,7 +2,7 @@ import itertools
 import logging
 import threading
 
-from flask import current_app
+from flask import current_app, Flask
 from pyasn1.type.univ import Null
 from pysnmp.hlapi import (
     CommunityData, ContextData, Integer32, ObjectIdentity, ObjectType, SnmpEngine,
@@ -30,7 +30,7 @@ def chunked(iterable, n):
 
 
 def probe_oper_status(player):
-    switch = current_app.conf['SWITCHES'][player]
+    switch = current_app.config['SWITCHES'][player]
     address = switch['address']
     port = switch['port']
     logger.info("Probing status for player %d on switch %s:%d", player, address)
@@ -49,19 +49,19 @@ def probe_oper_status(player):
             raise Exception("SNMP error returned")
         oper_states.extend(ifOperStatus(int(value)) for identity, value in varBinds)
     with StateLock:
-        for cell_state, (index, oper_state) in zip(current_app.game_state[player], enumerate(oper_states)):
+        for cell_state, (index, oper_state) in zip(current_app.cell_state[player], enumerate(oper_states)):
             if oper_state != ifOperStatus.up or cell_state == CellState.EMPTY:
-                pass
-            current_app.game_state[player][index] = CellState.HIT
+                continue
+            current_app.cell_state[player][index] = CellState.HIT
 
 
 def set_admin_status(player):
-    switch = current_app.conf['SWITCHES'][player]
+    switch = current_app.config['SWITCHES'][player]
     engine = SnmpEngine()
     auth_data = CommunityData(switch['community'], mpModel=1)
     transport = UdpTransportTarget((switch['address'], switch['port']))
     with StateLock:
-        desired_state = list(zip(switch['interfaces'], current_app.game_state[player]))
+        desired_state = list(zip(switch['interfaces'], current_app.cell_state[player]))
     for chunk in chunked((ObjectType(ObjectIdentity(ifAdminStatus.oid + (if_index,)), Integer32(cell_state.admin_status.value)) for if_index, cell_state in desired_state), 24):
         cmd = setCmd(engine, auth_data, transport, ContextData(), *chunk)
         errorIndication, errorStatus, errorIndex, varBinds = next(cmd)
@@ -70,23 +70,25 @@ def set_admin_status(player):
 
 
 class ProbeLoop(threading.Thread):
-    def __init__(self) -> None:
+    def __init__(self, app: Flask) -> None:
         super().__init__(group=None, name="Probe Loop", daemon=True)
+        self.app = app
         self.stop = threading.Event()
 
     def run(self) -> None:
-        switches = current_app.conf['SWITCHES']
-        while not self.stop.wait(1):
-            for player, switch in enumerate(switches):
-                try:
-                    probe_oper_status(player)
-                except (KeyboardInterrupt, SystemExit):
-                    raise
-                except:
-                    continue
+        with self.app.app_context():
+            switches = current_app.config['SWITCHES']
+            while not self.stop.wait(1):
+                for player, switch in enumerate(switches):
+                    try:
+                        probe_oper_status(player)
+                    except (KeyboardInterrupt, SystemExit):
+                        raise
+                    except:
+                        logger.exception("An error occurred")
 
 
-def run_probe_loop():
-    thread = ProbeLoop()
+def run_probe_loop(app: Flask):
+    thread = ProbeLoop(app)
     thread.start()
     return thread
