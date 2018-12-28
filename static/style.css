@@ -1,0 +1,28 @@
+.row {
+  display: flex;
+}
+
+.ship {
+  border: 1px solid black;
+  height: 24px;
+  width: 24px;
+  margin: .5em;
+  text-align: center;
+  line-height: 24px;
+}
+
+#preparing {
+  display: flex;
+  justify-content: space-around;
+}
+
+#running {
+  display: flex;
+  justify-content: space-around;
+}
+
+
+#over {
+}
+
+/* vim: set ts=8 sts=2 sw=2 et: */
