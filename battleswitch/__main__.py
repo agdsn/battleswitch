@@ -5,6 +5,8 @@ from .web import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default='config.py')
+parser.add_argument("--host", default='127.0.0.1')
+parser.add_argument("-p", "--port", default=5000)
 parser.add_argument("-d", "--debug", action='store_true')
 
 config_schema = {
@@ -26,4 +28,4 @@ args = parser.parse_args()
 # The internal webserver forks if reloader is enabled
 app.config.from_pyfile(args.config)
 verify_config(app.config)
-app.run(debug=args.debug, use_reloader=False, threaded=True)
+app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False, threaded=True)
