@@ -102,6 +102,7 @@ def ready():
         if all(current_app.ready_state):
             current_app.game_state = GameState.RUNNING
             app.probe_loop = run_probe_loop()
+    return ''
 
 
 @app.before_first_request

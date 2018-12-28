@@ -36,7 +36,13 @@ function initialize_board() {
 
 function initialize_prepare_handlers() {
   var create_handler = function (i) {
-    return function () { $.post('/toggle', {'cell': i}); };
+    return function () {
+      $.ajax(
+        type: 'POST',
+        url: '/toggle',
+        dataType: 'json',
+        data: JSON.stringify({'cell': i});
+    }
   };
 
   for (var i = 0; i < width*height; i++) {
@@ -44,11 +50,11 @@ function initialize_prepare_handlers() {
   }
 }
 
-function set_port(board, port_number, state) {
+function set_cell(board, cell_number, state) {
   console.assert(board === 'preparing_board' || board === 'own_board' || board === 'enemy_board');
-  console.assert(port_number >= 0 && port_number < width*height);
+  console.assert(cell_number >= 0 && cell_number < width*height);
   console.assert(state === 'empty' || state === 'present' || state === 'hit');
-  var e = $('#' + board + port_number);
+  var e = $('#' + board + cell_number);
   e.attr('class', 'ship ' + state);
   if (state === 'present') {
     e.text('🚢');
@@ -59,29 +65,59 @@ function set_port(board, port_number, state) {
   }
 }
 
+function set_board(board, cells) {
+  for (var i = 0; i < width*height; i++) {
+    set_cell(board, i, translate(cells[i]));
+  }
+}
+
+function enable_element(element_id) {
+  $('#' + element_id).css('display', '');
+}
+
+function disable_element(element_id) {
+  $('#' + element_id).css('display', 'none');
+}
+
+function disable_all_elements() {
+  disable_element('error');
+  disable_element('preparing');
+  disable_element('ready');
+  disable_element('running');
+  disable_element('over');
+}
+
 function request_state() {
   $.getJSON('/state', function(data) {
-    var preparing_display = 'none';
-    var running_display = 'none';
-    var over_display = 'none';
-    if (data.state.state === 'PREPARING') {
-      preparing_display = ''; 
-      for (var i = 0; i < width*height; i++) {
-        set_port('preparing_board', i, translate(data.state.own[i]));
-      }
-    } else if (data.state.state === 'RUNNING') {
-      running_display = '';
-      for (var i = 0; i < width*height; i++) {
-        set_port('own_board', i, translate(data.state.own[i]));
-        set_port('enemy_board', i, translate(data.state.enemy[i]));
-      }
-    } else if (data.state.state === 'OVER') {
-      over_display = '';
-    }
+    disable_all_elements();
 
-    $('#preparing').css('display', preparing_display);
-    $('#running').css('display', running_display);
-    $('#over').css('display', over_display);
+    switch (data.state.state) {
+      case 'PREPARING':
+        enable_element('preparing');
+        set_board('preparing_board', data.state.own);
+        enable_element('prepare_button');
+        break;
+
+      case 'READY':
+        enable_element('preparing');
+        set_board('preparing_board', data.state.own);
+        disable_element('prepare_button');
+        break;
+
+      case 'RUNNING':
+        enable_element('running');
+        set_board('own_board', data.state.own);
+        set_board('enemy_board', data.state.enemy);
+        break;
+
+      case 'OVER':
+        enable_element('over');
+        break;
+
+      default:
+        enable_element('error');
+        break;
+    }
   });
 
   setTimeout(request_state, 1000);
@@ -89,7 +125,7 @@ function request_state() {
 
 $(document).ready(function() {
   $('#prepare_button').click(function () {
-    $.post('/go');
+    $.post('/ready');
   });
 
   $.getJSON('/config', function(data) {

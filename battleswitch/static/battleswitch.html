@@ -8,17 +8,22 @@
   </head>
   <body>
     <h1>Battle Switches</h1>
-    <div id="preparing">
+    <div id="error">
+      <p>Server is not responding!</p>
+    </div>
+
+    <div id="preparing" style="display: none;">
       <div id="preparing_board"></div>
       <button id="prepare_button">Start Game</button>
     </div>
 
-    <div id="running">
+    <div id="running" style="display: none;">
       <div id="own_board" class="game"></div>
       <div id="enemy_board" class="game"></div>
     </div>
 
-    <div id="over">
+    <div id="over" style="display: none;">
+      <p>Game is over. Somebody won, dunno who…</p>
     </div>
   </body>
 </html>
