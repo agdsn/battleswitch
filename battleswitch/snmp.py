@@ -50,9 +50,11 @@ def probe_oper_status(player):
         oper_states.extend(ifOperStatus(int(value)) for identity, value in varBinds)
     with StateLock:
         for cell_state, (index, oper_state) in zip(current_app.cell_state[player], enumerate(oper_states)):
-            if oper_state != ifOperStatus.up or cell_state == CellState.EMPTY:
-                continue
-            current_app.cell_state[player][index] = CellState.HIT
+            if oper_state == ifOperStatus.down and cell_state != CellState.EMPTY:
+                current_app.cell_state[player][index] = CellState.PRESENT
+
+            if oper_state == ifOperStatus.up and cell_state != CellState.EMPTY:
+                current_app.cell_state[player][index] = CellState.HIT
         if not any(cell_state == CellState.PRESENT for cell_state in current_app.cell_state[player]):
             current_app.game_state = GameState.OVER
             return True

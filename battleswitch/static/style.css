@@ -1,15 +1,19 @@
-@import url('https://fonts.googleapis.com/css?family=Lalezar|PT+Sans');
+/* @import url('https://fonts.googleapis.com/css?family=Lalezar|PT+Sans'); o/
 
 body {
+  /*
   font-family: 'PT Sans', sans-serif;
+  */
   font-size: 150%;
 
   margin: 1em;
 }
 
 h1, h2, h3 {
+  /*
   font-family: 'Lalezar', cursive;
   font-weight: normal;
+  */
 }
 
 .row {
@@ -38,6 +42,10 @@ h1, h2, h3 {
 }
 
 #over {
+}
+
+#reset_button {
+  margin-top: 1em;
 }
 
 /* vim: set ts=8 sts=2 sw=2 et: */

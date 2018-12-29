@@ -95,7 +95,7 @@ def get_state():
         'state': game_state,
         'player': player,
         'own': [cell_state.value for cell_state in your_board],
-        'enemy': [CellState.HIT.value if state is CellState.HIT.value else CellState.EMPTY.value for state in
+        'enemy': [CellState.HIT.value if state == CellState.HIT else CellState.EMPTY.value for state in
                   current_app.cell_state[other]],
     }
     return jsonify(state=state)

@@ -115,12 +115,18 @@ function request_state() {
         break;
 
       case 'WON':
+        enable_element('running');
         enable_element('over');
+        set_board('own_board', data.state.own);
+        set_board('enemy_board', data.state.enemy);
         $('#over_text').text('You won! 🏆');
         break;
 
       case 'LOST':
+        enable_element('running');
         enable_element('over');
+        set_board('own_board', data.state.own);
+        set_board('enemy_board', data.state.enemy);
         $('#over_text').text('You lost! 💀');
         break;
 
@@ -160,6 +166,17 @@ $(document).ready(function() {
     height = data.config.board.height;
     initialize_board();
     initialize_prepare_handlers();
+
+    data.config.ships[0].forEach(function (x) {
+      var e = $('<li>');
+      var t = x + ' ';
+      for (var i = 0; i < x; i++) {
+        t = t + '🚢';
+      }
+      e.text(t);
+      $('#prepare_ship_sizes').append(e);
+    });
+
     request_state();
   });
 
