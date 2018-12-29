@@ -9,7 +9,7 @@ from pysnmp.hlapi import (
     UdpTransportTarget, getCmd, setCmd,
 )
 
-from battleswitch import CellState, StateLock, ifAdminStatus, ifOperStatus
+from battleswitch import CellState, StateLock, ifAdminStatus, ifOperStatus, GameState
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,10 @@ def probe_oper_status(player):
             if oper_state != ifOperStatus.up or cell_state == CellState.EMPTY:
                 continue
             current_app.cell_state[player][index] = CellState.HIT
+        if not any(cell_state == CellState.PRESENT for cell_state in current_app.cell_state[player]):
+            current_app.game_state = GameState.OVER
+            return True
+    return False
 
 
 def set_admin_status(player: int):
@@ -81,11 +85,13 @@ class ProbeLoop(threading.Thread):
             while not self.stop.wait(1):
                 for player, switch in enumerate(switches):
                     try:
-                        probe_oper_status(player)
+                        over = probe_oper_status(player)
                     except (KeyboardInterrupt, SystemExit):
                         raise
                     except:
                         logger.exception("An error occurred")
+                    if over:
+                        self.stop.set()
 
 
 def run_probe_loop(app: Flask):

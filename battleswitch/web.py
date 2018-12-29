@@ -83,13 +83,16 @@ def reset():
 def get_state():
     player = get_current_player()
     other = [1, 0][player]
+    your_board = current_app.cell_state[player]
     if current_app.game_state == GameState.PREPARING and current_app.ready_state[player]:
         game_state = 'READY'
+    elif current_app.game_state == GameState.OVER:
+        game_state = 'LOST' if not any(cell == CellState.PRESENT for cell in your_board) else 'WON'
     else:
         game_state = current_app.game_state.name
     state = {
         'state': game_state,
-        'own': [cell_state.value for cell_state in current_app.cell_state[player]],
+        'own': [cell_state.value for cell_state in your_board],
         'enemy': [CellState.HIT.value if state is CellState.HIT.value else CellState.EMPTY.value for state in
                   current_app.cell_state[other]],
     }
