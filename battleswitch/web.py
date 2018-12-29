@@ -9,12 +9,12 @@ logger = app.logger
 
 @app.route('/')
 def get_root():
-    return redirect(url_for('static', filename='start.html'), 303)
+    return current_app.send_static_file('start.html')
 
 
 @app.route('/game')
 def get_game():
-    return redirect(url_for('static', filename='battleswitch.html'), 303)
+    return current_app.send_static_file('battleswitch.html')
 
 
 @app.route('/config')
@@ -91,6 +91,7 @@ def get_state():
     else:
         game_state = current_app.game_state.name
     state = {
+        'player': player,
         'state': game_state,
         'player': player,
         'own': [cell_state.value for cell_state in your_board],

@@ -1,26 +1,41 @@
+@import url('https://fonts.googleapis.com/css?family=Lalezar|PT+Sans');
+
+body {
+  font-family: 'PT Sans', sans-serif;
+  font-size: 150%;
+
+  margin: 1em;
+}
+
+h1, h2, h3 {
+  font-family: 'Lalezar', cursive;
+  font-weight: normal;
+}
+
 .row {
   display: flex;
 }
 
 .ship {
   border: 1px solid black;
-  height: 24px;
-  width: 24px;
+  height: 30px;
+  width: 30px;
   margin: .5em;
+  /*
   text-align: center;
   line-height: 24px;
+  */
 }
 
 #preparing {
-  display: flex;
-  justify-content: space-around;
+  /* display: flex; */
+  /* justify-content: space-around; */
 }
 
 #running {
   display: flex;
   justify-content: space-around;
 }
-
 
 #over {
 }

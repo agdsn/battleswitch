@@ -93,7 +93,7 @@ function request_state() {
   var on_success = function(data) {
     disable_all_elements();
 
-    $('#player').text('You are player ' + data.state.player + '.');
+    $('#player').text('You are player ' + (data.state.player + 1) + '.');
 
     switch (data.state.state) {
       case 'PREPARING':
