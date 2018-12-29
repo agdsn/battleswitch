@@ -92,6 +92,7 @@ def get_state():
         game_state = current_app.game_state.name
     state = {
         'state': game_state,
+        'player': player,
         'own': [cell_state.value for cell_state in your_board],
         'enemy': [CellState.HIT.value if state is CellState.HIT.value else CellState.EMPTY.value for state in
                   current_app.cell_state[other]],
