@@ -20,7 +20,7 @@ function initialize_board() {
       board_div.append(row_div);
 
       for (var c = 0; c < width; c++) {
-        ship_div = $('<div/>');
+        ship_div = $('<button/>');
         ship_div.attr('class', 'ship');
         ship_div.attr('id', board + i);
         row_div.append(ship_div);
@@ -90,8 +90,10 @@ function disable_all_elements() {
 }
 
 function request_state() {
-  $.getJSON('/state', function(data) {
+  var on_success = function(data) {
     disable_all_elements();
+
+    $('#player').text('You are player ' + data.state.player + '.');
 
     switch (data.state.state) {
       case 'PREPARING':
@@ -112,22 +114,45 @@ function request_state() {
         set_board('enemy_board', data.state.enemy);
         break;
 
-      case 'OVER':
+      case 'WON':
         enable_element('over');
+        $('#over_text').text('You won! 🏆');
+        break;
+
+      case 'LOST':
+        enable_element('over');
+        $('#over_text').text('You lost! 💀');
         break;
 
       default:
         enable_element('error');
         break;
     }
-  });
 
-  setTimeout(request_state, 1000);
+    setTimeout(request_state, 500);
+  };
+
+  var on_error = function () {
+    disable_all_elements();
+    enable_element('error');
+  };
+
+  $.ajax({
+    url: '/state',
+    dataType: 'json',
+    success: on_success,
+    error: on_error,
+    timeout: 10000
+  });
 }
 
 $(document).ready(function() {
   $('#prepare_button').click(function () {
     $.post('/ready');
+  });
+
+  $('#reset_button').click(function () {
+    $.post('/reset');
   });
 
   $.getJSON('/config', function(data) {
