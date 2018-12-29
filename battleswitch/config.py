@@ -8,7 +8,7 @@ SWITCHES = [
         # SNMP ifIndex list
         'interfaces': (
             list(range(1, 25, 2)) + list(range(2, 25, 2))
-            + list(range(65, 89, 2)) + list(range(65, 89, 2))
+            + list(range(65, 89, 2)) + list(range(66, 89, 2))
             + list(range(129, 153, 2)) + list(range(130, 153, 2))
         ),
     },
@@ -18,7 +18,7 @@ SWITCHES = [
         'community': 'public',
         'interfaces': (
             list(range(1, 25, 2)) + list(range(2, 25, 2))
-            + list(range(65, 89, 2)) + list(range(65, 89, 2))
+            + list(range(65, 89, 2)) + list(range(66, 89, 2))
             + list(range(129, 153, 2)) + list(range(130, 153, 2))
         ),
     },
