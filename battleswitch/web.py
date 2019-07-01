@@ -20,7 +20,7 @@ def get_game():
 @app.route('/config')
 def get_config():
     width = current_app.config['BOARD_WIDTH']
-    height = len(current_app.config['SWITCHES'][0]['interfaces']) / width
+    height = len(current_app.config['SWITCHES'][0]) * len(current_app.config['SWITCHES'][0][0]['interfaces']) / width
     return jsonify(config={
         'board': {
             'width': width,
@@ -124,12 +124,16 @@ def first_run():
 
 def setup_state():
     with StateLock:
-        switches = current_app.config['SWITCHES']
         current_app.game_state = GameState.PREPARING
-        current_app.cell_state = [
-            [CellState.EMPTY for _ in switch['interfaces']] for switch in switches
-        ]
-        current_app.ready_state = [False for _ in switches]
+        current_app.cell_state = []
+        players = current_app.config['SWITCHES']
+        for player_switches in players:
+            current_player = []
+            for switch in player_switches:
+                current_player.extend([CellState.EMPTY for _ in switch['interfaces']])
+            current_app.cell_state.append(current_player)
+
+        current_app.ready_state = [False for _ in players]
         if app.probe_loop is not None:
             if app.probe_loop.is_alive():
                 app.probe_loop.stop.set()
