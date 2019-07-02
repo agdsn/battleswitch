@@ -1,6 +1,6 @@
 # Battleswitch
 
-Battsleswitch is the switch-based version of the Seabattle game.
+Battsleswitch is the switch-based version of the Battleship game.
 
 ## Installation
 Get the code from Github and put it on a machine that has Python 3. Install the required 
