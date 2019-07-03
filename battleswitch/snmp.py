@@ -28,26 +28,33 @@ def chunked(iterable, n):
             break
         chunk = tuple(itertools.islice(it, n))
 
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 def probe_oper_status(player):
-    switch = current_app.config['SWITCHES'][player]
-    address = switch['address']
-    port = switch['port']
-    logger.info("Probing status for player %d on switch %s:%d", player, address)
-    engine = SnmpEngine()
-    auth_data = CommunityData(switch['community'], mpModel=1)
-    transport = UdpTransportTarget((address, port))
-    interfaces = switch['interfaces']
+    # Iterate over all the switches and get the status
+    player_switches = current_app.config['SWITCHES'][player]
+
     oper_states = []
-    for chunk in chunked((ObjectType(ObjectIdentity(ifOperStatus.oid + (index,)), Null()) for index in interfaces), 24):
-        cmd = getCmd(
-            engine, auth_data, transport, ContextData(),
-            *chunk
-        )
-        errorIndication, errorStatus, errorIndex, varBinds = next(cmd)
-        if errorIndication is not None:
-            raise Exception("SNMP error returned")
-        oper_states.extend(ifOperStatus(int(value)) for identity, value in varBinds)
+    for switch in player_switches:
+        address = switch['address']
+        port = switch['port']
+
+        engine = SnmpEngine()
+        auth_data = CommunityData(switch['community'], mpModel=1)
+        transport = UdpTransportTarget((address, port))
+        interfaces = switch['interfaces']
+        for chunk in chunked((ObjectType(ObjectIdentity(ifOperStatus.oid + (index,)), Null()) for index in interfaces), 24):
+            cmd = getCmd(
+                engine, auth_data, transport, ContextData(),
+                *chunk
+            )
+            errorIndication, errorStatus, errorIndex, varBinds = next(cmd)
+            if errorIndication is not None:
+                raise Exception("SNMP error returned")
+            oper_states.extend(ifOperStatus(int(value)) for identity, value in varBinds)
+
     with StateLock:
         for cell_state, (index, oper_state) in zip(current_app.cell_state[player], enumerate(oper_states)):
             if oper_state == ifOperStatus.down and cell_state != CellState.EMPTY:
@@ -58,21 +65,35 @@ def probe_oper_status(player):
         if not any(cell_state == CellState.PRESENT for cell_state in current_app.cell_state[player]):
             current_app.game_state = GameState.OVER
             return True
+
     return False
 
 
 def set_admin_status(player: int):
-    switch = current_app.config['SWITCHES'][player]
     engine = SnmpEngine()
-    auth_data = CommunityData(switch['community'], mpModel=1)
-    transport = UdpTransportTarget((switch['address'], switch['port']))
+    switches = current_app.config['SWITCHES'][player]
+    # split the current cell state over the number of switches after getting it using the lock
     with StateLock:
-        desired_state = list(zip(switch['interfaces'], current_app.cell_state[player]))
-    for chunk in chunked((ObjectType(ObjectIdentity(ifAdminStatus.oid + (if_index,)), Integer32(cell_state.admin_status.value)) for if_index, cell_state in desired_state), 24):
-        cmd = setCmd(engine, auth_data, transport, ContextData(), *chunk)
-        errorIndication, errorStatus, errorIndex, varBinds = next(cmd)
-        if errorIndication is not None:
-            raise Exception("SNMP error returned")
+        current_cell_state = current_app.cell_state[player]
+
+    cell_state_per_switch = split(current_cell_state, len(switches))
+    #print(repr(cell_state_per_switch))
+
+    cell_state_per_switch = list(cell_state_per_switch)
+
+    for switch_count in range(len(switches)):
+        switch = switches[switch_count]
+        auth_data = CommunityData(switch['community'], mpModel=1)
+        transport = UdpTransportTarget((switch['address'], switch['port']))
+
+        cell_state_current_switch = cell_state_per_switch[switch_count]
+        desired_state = list(zip(switch['interfaces'], cell_state_current_switch))
+
+        for chunk in chunked((ObjectType(ObjectIdentity(ifAdminStatus.oid + (if_index,)), Integer32(cell_state.admin_status.value)) for if_index, cell_state in desired_state), 24):
+            cmd = setCmd(engine, auth_data, transport, ContextData(), *chunk)
+            errorIndication, errorStatus, errorIndex, varBinds = next(cmd)
+            if errorIndication is not None:
+                raise Exception("SNMP error returned")
 
 
 class ProbeLoop(threading.Thread):
